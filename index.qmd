@@ -1,14 +1,20 @@
 ---
-title: "blog"
-listing:
-  contents: posts
-  sort: "date desc"
-  type: default
-  categories: true
-  sort-ui: false
-  filter-ui: false
-page-layout: full
-title-block-banner: true
+title: "Ryan McManus"
+image: images/profile.png 
+about:
+  template: jolla
+  image-width: 20em
+  image-shape: round
+  links:
+    - icon: linkedin
+      text: LinkedIn
+      href: https://www.linkedin.com/in/ryan-mcmanus-energy
+    - icon: github
+      text: Github
+      href: https://github.com/RyanMcManus916
+    - icon: envelope
+      text: Contact
+      href: mailto:ryanlmcmanus@gmail.com
 ---
 
-
+I am a Principal Risk Specialist at Sacramento Municipal Utility District (SMUD).

@@ -17,4 +17,4 @@ about:
       href: mailto:ryanlmcmanus@gmail.com
 ---
 
-I am a Principal Risk Specialist at Sacramento Municipal Utility District (SMUD).
+I am a Principal Risk Specialist at Sacramento Municipal Utility District (SMUD). I have an extensive background in the electric utility industry, solving data problems in load forecasting, energy trading, long-term portfolio planning, and commodity risk.

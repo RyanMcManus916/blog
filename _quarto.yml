@@ -3,7 +3,7 @@ project:
   output-dir: docs
 
 website:
-  title: "Portfolio"
+  title: "Ryan McManus"
   favicon: "images/profile.png"
   navbar:
     left: 
@@ -13,8 +13,9 @@ website:
         href: projects.qmd
       - text: Resume
         href: resume.qmd
+      - text: Blog
+        href: blog.qmd
     right:
-      - about.qmd
       - icon: github
         href: https://github.com/
       - icon: linkedin
@@ -22,8 +23,8 @@ website:
 format:
   html:
     theme: 
-      light: cosmo
       dark: darkly
+      light: cosmo
     code-link: true
     code-fold: show
     code-tools: false

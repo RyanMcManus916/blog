@@ -7,11 +7,18 @@
     "text": "This is the first post in a Quarto blog. Welcome!\n\nSince this post doesn’t specify an explicit image, the first image in the post will be used in the listing page of posts."
   },
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "Ryan McManus",
+    "objectID": "posts/Create Calendar/index.html",
+    "href": "posts/Create Calendar/index.html",
+    "title": "Create Calendar in R",
     "section": "",
-    "text": "I am a Principal Risk Specialist at Sacramento Municipal Utility District (SMUD)."
+    "text": "On of the most useful things you can create is a function to generate a calendar.\nNecessary packages\n\nCode#install.packages('timeDate')\nlibrary(conflicted)\nlibrary(timeDate)\nlibrary(tidyverse)\n\n── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──\n✔ dplyr     1.1.3     ✔ readr     2.1.4\n✔ forcats   1.0.0     ✔ stringr   1.5.0\n✔ ggplot2   3.4.4     ✔ tibble    3.2.1\n✔ lubridate 1.9.3     ✔ tidyr     1.3.0\n✔ purrr     1.0.2     \n\nCodelibrary(DT)\nconflicted::conflict_prefer_all('tidyverse','stats')\n\n\nIn the electric industry it’s important to be able to summarize data by specific timing blocks. Below a list of North American Electric Reliability Corporation (NERC) holidays.\nSelect the timezone you wish to report in.\n\nCodestartdate&lt;-'2023-01-01'\nenddate&lt;-'2024-02-01'\n#tz_select&lt;-'America/Los_Angeles'\ntz_select&lt;-'UTC'\n\n\nnerc_holidays&lt;-as.Date(timeDate::holidayNERC(lubridate::year(lubridate::ymd(startdate)):lubridate::year(lubridate::ymd(enddate)),FinCenter=tz_select))%&gt;%lubridate::force_tz()\n\n\nCreate the hourly calendar…\nYou can get as creative with the timing periods as you need. Below is the general structure. Please notice the day-of-week (dow) has been changed so the week flows Monday to Sunday or 1 to 7 and hours are represented as Hour-ending.\n\nCodedf&lt;-data.frame(start=lubridate::ymd_h(paste0(startdate,\"_0\"),tz=tz_select),end=lubridate::ymd_h(paste0(enddate,\"_0\")))%&gt;%\n  dplyr::transmute(datetime=list(seq(min(start),max(end),by=\"hour\")))%&gt;%\n  tidyr::unnest(datetime)%&gt;%\n  dplyr::mutate(datetime=lubridate::force_tz(datetime,tz=tz_select))%&gt;%\n  dplyr::mutate(\n    date=lubridate::force_tz(lubridate::as_date(datetime),tz=tz_select),\n    year=lubridate::year(datetime),\n    month=lubridate::month(datetime),\n    day=lubridate::day(datetime),\n    hour=lubridate::hour(datetime)+1,\n    dow=lubridate::wday(datetime,week_start = getOption(\"lubridate.week.start\",1)),\n    nerc_holiday=ifelse(date %in% nerc_holidays,1,0),\n    peak_day=ifelse(dplyr::between(dow,1,6) & nerc_holiday==0,1,0),\n    hlh=ifelse(dplyr::between(dow,1,6) & dplyr::between(hour,7,22) & nerc_holiday==0,1,0),\n    llh=1-hlh,\n    super=ifelse(dplyr::between(dow,1,5) & dplyr::between(hour,13,20) & nerc_holiday==0,1,0),\n    hlh_he13T22=ifelse(dplyr::between(dow,1,6) & dplyr::between(hour,13,22) & nerc_holiday==0,1,0),\n    llh_sun_holiday=ifelse(dow==7 | nerc_holiday==1,1,0)\n  )\n\n\nLet’s take a peak at the results.\n\nCodedf%&gt;%head(50)%&gt;%DT::datatable()\n\n\n\n\n\n\nWe need to double check our results. I refer to Energy GPS Power Calendar. Below is a quick screenshot for reference.\n\n\n\n\nWe need to roll-up our results for comparison.\n\nCodedf%&gt;%\n  dplyr::summarise(dplyr::across(nerc_holiday:llh_sun_holiday,~sum(.)),month_date=max(lubridate::floor_date(date,'month')),.by = c(year,month))%&gt;%\n  mutate(days_in_month=lubridate::days_in_month(month_date),flat=days_in_month*24,peak_day=peak_day/24,nerc_holiday=nerc_holiday/24,.after = peak_day)%&gt;%\n  select(month_date,year,month,flat,hlh,llh,llh_sun_holiday,peak_day,days_in_month,nerc_holiday)%&gt;%\n  DT::datatable()\n\n\n\n\n\n\nLooks good to me!\nBoom. Now you have a NERC calendar you can use in R or drop it to a flat file or a SQL table for different uses. Before we end this, let’s do one more step to make this calendar infinitely more useful. Let’s create a calendar function!\n\nCodecalendar&lt;-function(startdate,enddate,tz_select='UTC',granularity='hour'){\n\n  nerc_holidays&lt;-as.Date(timeDate::holidayNERC(lubridate::year(lubridate::ymd(startdate)):lubridate::year(lubridate::ymd(enddate)),FinCenter=tz_select))%&gt;%lubridate::force_tz()\n  \n  df&lt;-data.frame(start=lubridate::ymd_h(paste0(startdate,\"_0\"),tz=tz_select),end=lubridate::ymd_h(paste0(enddate,\"_0\")))%&gt;%\n  dplyr::transmute(datetime=list(seq(min(start),max(end),by=\"hour\")))%&gt;%\n  tidyr::unnest(datetime)%&gt;%\n  dplyr::mutate(datetime=lubridate::force_tz(datetime,tz=tz_select))%&gt;%\n  dplyr::mutate(\n    date=lubridate::force_tz(lubridate::as_date(datetime),tz=tz_select),\n    year=lubridate::year(datetime),\n    month=lubridate::month(datetime),\n    day=lubridate::day(datetime),\n    hour=lubridate::hour(datetime)+1,\n    dow=lubridate::wday(datetime,week_start = getOption(\"lubridate.week.start\",1)),\n    nerc_holiday=ifelse(date %in% nerc_holidays,1,0),\n    peak_day=ifelse(dplyr::between(dow,1,6) & nerc_holiday==0,1,0),\n    hlh=ifelse(dplyr::between(dow,1,6) & dplyr::between(hour,7,22) & nerc_holiday==0,1,0),\n    llh=1-hlh,\n    super=ifelse(dplyr::between(dow,1,5) & dplyr::between(hour,13,20) & nerc_holiday==0,1,0),\n    hlh_he13T22=ifelse(dplyr::between(dow,1,6) & dplyr::between(hour,13,22) & nerc_holiday==0,1,0),\n    llh_sun_holiday=ifelse(dow==7 | nerc_holiday==1,1,0)\n  )\n  \n  if(granularity=='month'){\n    df&lt;-df%&gt;%dplyr::summarise(dplyr::across(nerc_holiday:llh_sun_holiday,~sum(.)),month_date=max(lubridate::floor_date(date,'month')),.by = c(year,month))%&gt;%\n      mutate(days_in_month=lubridate::days_in_month(month_date),flat=days_in_month*24,peak_day=peak_day/24,nerc_holiday=nerc_holiday/24,.after = peak_day)%&gt;%\n      select(month_date,everything())\n  }\n  \n  return(df)\n  \n}\n\n\nTake the new function for a spin…\n\nCodecalendar('2022-01-01','2023-01-01',granularity = 'month')%&gt;%DT::datatable()"
+  },
+  {
+    "objectID": "blog.html",
+    "href": "blog.html",
+    "title": "Blog",
+    "section": "",
+    "text": "Create Calendar in R\n\n\n\n\n\n\n\nR\n\n\nfunction\n\n\ncode\n\n\n\n\n\n\n\n\n\n\n\nOct 21, 2023\n\n\nRyan McManus\n\n\n\n\n\n\n  \n\n\n\n\nPost With Code\n\n\n\n\n\n\n\nnews\n\n\ncode\n\n\nanalysis\n\n\n\n\n\n\n\n\n\n\n\nOct 20, 2023\n\n\nHarlow Malloc\n\n\n\n\n\n\n  \n\n\n\n\nWelcome To My Blog\n\n\n\n\n\n\n\nnews\n\n\n\n\n\n\n\n\n\n\n\nOct 17, 2023\n\n\nTristan O’Malley\n\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "about.html",
@@ -21,17 +28,17 @@
     "text": "About this blog"
   },
   {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Ryan McManus",
+    "section": "",
+    "text": "I am a Principal Risk Specialist at Sacramento Municipal Utility District (SMUD). I have an extensive background in the electric utility industry, solving data problems in load forecasting, energy trading, long-term portfolio planning, and commodity risk."
+  },
+  {
     "objectID": "posts/post-with-code/index.html",
     "href": "posts/post-with-code/index.html",
     "title": "Post With Code",
     "section": "",
     "text": "This is a post with executable code.\n\nCode1 + 1\n\n[1] 2"
-  },
-  {
-    "objectID": "projects.html",
-    "href": "projects.html",
-    "title": "Projects",
-    "section": "",
-    "text": "Post With Code\n\n\n\n\n\n\n\nnews\n\n\ncode\n\n\nanalysis\n\n\n\n\n\n\n\n\n\n\n\nOct 20, 2023\n\n\nHarlow Malloc\n\n\n\n\n\n\n  \n\n\n\n\nWelcome To My Blog\n\n\n\n\n\n\n\nnews\n\n\n\n\n\n\n\n\n\n\n\nOct 17, 2023\n\n\nTristan O’Malley\n\n\n\n\n\n\nNo matching items"
   }
 ]

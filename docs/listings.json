@@ -1,7 +1,8 @@
 [
   {
-    "listing": "/projects.html",
+    "listing": "/blog.html",
     "items": [
+      "/posts/Create Calendar/index.html",
       "/posts/post-with-code/index.html",
       "/posts/welcome/index.html"
     ]

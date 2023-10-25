@@ -3,12 +3,10 @@ title: "Create Calendar in R"
 author: "Ryan McManus"
 date: "2023-10-21"
 categories: [R, function, code]
-image: "image.jpg"
+image: "cover.png"
 ---
 
-
-
-On of the most useful things you can create is a function to generate a calendar.
+One of the most useful things you can create is a function to generate a calendar.
 
 Necessary packages
 
@@ -23,7 +21,7 @@ conflicted::conflict_prefer_all('tidyverse','stats')
 
 ```
 
-In the electric industry it's important to be able to summarize data by specific timing blocks. Below a list of North American Electric Reliability Corporation (NERC) holidays.
+In the electric industry it's important to be able to summarize data by specific timing blocks. Below is a list of North American Electric Reliability Corporation (NERC) holidays.
 
 Select the timezone you wish to report in.
 
@@ -40,7 +38,7 @@ nerc_holidays<-as.Date(timeDate::holidayNERC(lubridate::year(lubridate::ymd(star
 
 Create the hourly calendar...
 
-You can get as creative with the timing periods as you need. Below is the general structure. Please notice the day-of-week (dow) has been changed so the week flows Monday to Sunday or 1 to 7 and hours are represented as Hour-ending.
+You can get as creative with the timing periods as you need. Below is the general structure. Please notice the day-of-week (dow) has been changed so the week flows Monday to Sunday or 1 to 7 and hours are represented as hour-ending.
 
 ```{r}
 

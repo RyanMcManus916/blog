@@ -1,12 +1,12 @@
 ---
 title: "Welcome To My Blog"
-author: "Tristan O'Malley"
-date: "2023-10-17"
+author: "Ryan McManus"
+date: "2023-10-20"
 categories: [news]
 ---
 
-This is the first post in a Quarto blog. Welcome!
+### Welcome!
 
-![](thumbnail.jpg)
+This is my blog where I'll cover topics I find interesting from the electric utility industry. I usually conduct my data science with R or Python, but there will be a sprinkling of other language as necessary to get the job done. Thank you for joining and enjoy the ride!
 
-Since this post doesn't specify an explicit `image`, the first image in the post will be used in the listing page of posts.
+![](thumbnail.jpg){width="676"}

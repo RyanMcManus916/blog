@@ -1,0 +1,145 @@
+---
+title: "CAISO OASIS API"
+author: "Ryan McManus"
+date: "2023-10-25"
+categories: [R, function, code]
+image: "cover.png"
+---
+
+For this post we'll walk through creating an API function for downloading CAISO OASIS data through their supported API. I will be referencing the [Interface Specification for OASIS](https://www.caiso.com/Documents/OASISAPISpecification.pdf "API Doc"). This document walks you through how to query the back-end system to extract a variety of data. Today we'll be looking to get access to their day-ahead, fifteen minute, and real-time markets.
+
+I will be using the single reports, as described in section 2.1. The basic format goes as followed:
+
+*URL?queryname=&startdate=&enddate=&market_run_id=&varParameters*
+
+Assemble our variables...
+
+Updated info --https://www.caiso.com/Documents/OASIS-Frequently-Asked-Questions.pdf
+
+```{r}
+library(tidyverse)
+library(httr)
+library(XML)
+
+URL<- 'http://oasis.caiso.com/oasisapi/SingleZip'
+
+startdate<-'2023-01-15'
+enddate<-'2023-01-30'
+market_run_id<-'RTM'
+queryname<-'PRC_INTVL_LMP'
+nodes<-c('TH_NP15_GEN-APND')
+```
+
+
+```{r}
+caisodatefmt<-function(x){URLencode(format(lubridate::ymd(x,tz="America/Los_Angeles"),"%Y%m%dT07:00-0000"),reserved = TRUE)}
+isostartdate<-caisodatefmt(startdate)
+isoenddate<-caisodatefmt(enddate)
+
+```
+
+
+This param list is much cleaner
+
+```{r}
+# Load the required libraries
+library(httr)
+library(XML)
+library(tidyverse)
+library(xml2)
+# Define your API key and endpoint
+
+endpoint <- 'http://oasis.caiso.com/oasisapi/SingleZip'
+
+# Define the parameters for the data you want to retrieve
+params <- list(
+ # "resultformat"=6,
+  "queryname" = "PRC_LMP",
+  "version" = "12", # API version
+  "startdatetime" = isostartdate,  # Start date and time
+  "enddatetime" = isoenddate,    # End date and time
+  "market_run_id" = "DAM",  # Day-Ahead Market
+  "node" = "MALIN_5_N101"
+)
+
+# Make the API request with your API key and parameters
+full_url<-URLdecode(modify_url(endpoint, query = params))
+response <- GET(full_url)
+
+# Check if the request was successful (status code 200)
+if (response$status_code == 200) {
+  
+  temp_dir<-tempdir()
+  content_disposition<-response$headers$`content-disposition`
+  filename <- sub("^.*filename=\"?([^;\"]+)\"?.*$", "\\1", content_disposition)
+  temp_zip_file <- paste0(temp_dir, "\\", filename)
+  #temp_zip_file <- tempfile(fileext = ".zip")
+ 
+  zipped<-writeBin(content(response,as='raw'),temp_zip_file)
+  unzip(temp_zip_file,exdir=temp_dir)
+  extracted_files <- list.files(temp_dir)
+  #data_file<-file.path(temp_dir,extracted_files[1])
+  
+  data_file<-file.path(temp_dir,paste0(tools::file_path_sans_ext(filename),'.xml'))
+  xml_doc <- xmlParse(data_file)
+  root_element <- xmlRoot(xml_doc)
+  
+  # Get the namespace URI
+  namespace_uri <- xmlNamespace(root_element)
+  
+  # Define the namespace prefix and URI
+  namespace_prefix <- "ns"
+  namespace_uri <- namespace_uri[[1]]
+  
+  # Find all <REPORT_DATA> elements with the namespace
+  report_data_nodes <- getNodeSet(xml_doc, "//ns:REPORT_DATA", namespaces = c(ns = namespace_uri))
+  
+  # Convert the XML data to a data frame
+  df <- xmlToDataFrame(report_data_nodes)
+  #files_to_delete <- dir(path=temp_dir)
+  #file.remove(file.path(temp_dir, files_to_delete))
+  # Now you have the CAISO OASIS data in the oasis_data object, which you can further process.
+} else {
+  stop("API request was not successful.")
+}
+
+```
+
+
+```{r}
+
+str(response$headers$`content-disposition`)
+content_disposition<-response$headers$`content-disposition`
+ filename <- sub("^.*filename=\"?([^;\"]+)\"?.*$", "\\1", content_disposition)
+filename
+
+```
+
+
+
+
+```{r}
+ 
+  unlink(temp_dir, recursive = TRUE)
+```
+
+```{r}
+
+#date_range<-seq.Date(ymd(startdate),ymd(enddate),by='1 day')
+
+library(lubridate)
+
+s <- ymd('2022-01-01')
+e <- ymd('2023-01-01')
+
+while (s <= e) {
+  e_tmp <- s + days(30)
+  if (e_tmp > e) {
+    e_tmp <- e
+  }
+  print(paste("Start Date:", s, "End Date:", e_tmp))
+  s <- e_tmp + days(1)
+}
+
+```
+

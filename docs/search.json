@@ -4,7 +4,7 @@
     "href": "posts/welcome/index.html",
     "title": "Welcome To My Blog",
     "section": "",
-    "text": "This is the first post in a Quarto blog. Welcome!\n\nSince this post doesn’t specify an explicit image, the first image in the post will be used in the listing page of posts."
+    "text": "Welcome!\nThis is my blog where I’ll cover topics I find interesting from the electric utility industry. I usually conduct my data science with R or Python, but there will be a sprinkling of other language as necessary to get the job done. Thank you for joining and enjoy the ride!"
   },
   {
     "objectID": "posts/Create Calendar/index.html",
@@ -18,7 +18,7 @@
     "href": "blog.html",
     "title": "Blog",
     "section": "",
-    "text": "Create Calendar in R\n\n\n\n\n\n\n\nR\n\n\nfunction\n\n\ncode\n\n\n\n\n\n\n\n\n\n\n\nOct 21, 2023\n\n\nRyan McManus\n\n\n\n\n\n\n  \n\n\n\n\nPost With Code\n\n\n\n\n\n\n\nnews\n\n\ncode\n\n\nanalysis\n\n\n\n\n\n\n\n\n\n\n\nOct 20, 2023\n\n\nHarlow Malloc\n\n\n\n\n\n\n  \n\n\n\n\nWelcome To My Blog\n\n\n\n\n\n\n\nnews\n\n\n\n\n\n\n\n\n\n\n\nOct 17, 2023\n\n\nTristan O’Malley\n\n\n\n\n\n\nNo matching items"
+    "text": "CAISO OASIS API\n\n\n\n\n\n\n\nR\n\n\nfunction\n\n\ncode\n\n\n\n\n\n\n\n\n\n\n\nOct 25, 2023\n\n\nRyan McManus\n\n\n\n\n\n\n  \n\n\n\n\nCreate Calendar in R\n\n\n\n\n\n\n\nR\n\n\nfunction\n\n\ncode\n\n\n\n\n\n\n\n\n\n\n\nOct 21, 2023\n\n\nRyan McManus\n\n\n\n\n\n\n  \n\n\n\n\nWelcome To My Blog\n\n\n\n\n\n\n\nnews\n\n\n\n\n\n\n\n\n\n\n\nOct 20, 2023\n\n\nRyan McManus\n\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "about.html",
@@ -40,5 +40,12 @@
     "title": "Post With Code",
     "section": "",
     "text": "This is a post with executable code.\n\nCode1 + 1\n\n[1] 2"
+  },
+  {
+    "objectID": "posts/CAISO OASIS API/index.html",
+    "href": "posts/CAISO OASIS API/index.html",
+    "title": "CAISO OASIS API",
+    "section": "",
+    "text": "For this post we’ll walk through creating an API function for downloading CAISO OASIS data through their supported API. I will be referencing the Interface Specification for OASIS. This document walks you through how to query the back-end system to extract a variety of data. Today we’ll be looking to get access to their day-ahead, fifteen minute, and real-time markets.\nI will be using the single reports, as described in section 2.1.\nURL?queryname=&lt;A&gt;&startdate=&lt;D&gt;&enddate=&lt;D&gt;&market_run_id=&lt;A&gt;&varParameters"
   }
 ]

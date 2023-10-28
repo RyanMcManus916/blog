@@ -1,0 +1,14 @@
+{
+  "hash": "23eab16a2b8e92e3c26bb198edbcbd0e",
+  "result": {
+    "markdown": "---\ntitle: \"CAISO OASIS API\"\nauthor: \"Ryan McManus\"\ndate: \"2023-10-25\"\ncategories: [R, function, code]\nimage: \"cover.png\"\n---\n\n\nFor this post we'll walk through creating an API function for downloading CAISO OASIS data through their supported API. I will be referencing the [Interface Specification for OASIS](https://www.caiso.com/Documents/OASISAPISpecification.pdf \"API Doc\"). This document walks you through how to query the back-end system to extract a variety of data. Today we'll be looking to get access to their day-ahead, fifteen minute, and real-time markets.\n\nI will be using the single reports, as described in section 2.1.\n\n``` python\nURL?queryname=<A>&startdate=<D>&enddate=<D>&market_run_id=<A>&varParameters\n```\n\n\n::: {.cell}\n\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

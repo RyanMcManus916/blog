@@ -255,7 +255,8 @@ caiso_prices<-function(startdate,enddate,queryname,market_run_id,nodes,day_chunk
       }
   
     s <- e_tmp + days(1)
-    sys.sleep(5) #Sleep so you dont ping the server to death
+    print(s)
+    Sys.sleep(5) #Sleep so you dont ping the server to death
     } #end of while loop
   unlink(temp_dir, recursive = TRUE)
   return(df_output)
@@ -267,11 +268,11 @@ Take our new function for a spin...
 ```{r}
 startdate<-'2023-01-15'
 enddate<-'2023-01-30'
-market_run_id<-'DAM'
-queryname<-'PRC_LMP'
+market_run_id<-'DAM' #DAM,RTM
+queryname<-'PRC_LMP' #PRC_LMP, PRC_INTVL_LMP
 nodes<-c('TH_NP15_GEN-APND','TH_SP15_GEN-APND')
 day_chunk<-30
-api_version<-12
+api_version<-12 #Version 12 for DAM and Version 2 for RTM
 
 result<-caiso_prices(startdate = startdate,enddate=enddate,queryname = queryname,market_run_id = market_run_id,nodes = nodes,day_chunk = day_chunk,api_version=api_version)
 ```

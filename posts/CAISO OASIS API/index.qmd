@@ -1,7 +1,7 @@
 ---
 title: "CAISO OASIS API"
 author: "Ryan McManus"
-date: "2023-10-25"
+date: "2023-11-01"
 categories: [R, function, code]
 image: "cover.png"
 ---
@@ -10,11 +10,11 @@ For this post we'll walk through creating an API function for downloading CAISO 
 
 I will be using the single reports, as described in section 2.1. The basic format goes as followed:
 
-*URL?queryname=&startdate=&enddate=&market_run_id=&varParameters*
-
-Assemble our variables...
+`URL?queryname=&startdate=&enddate=&market_run_id=&varParameters`
 
 Updated info --https://www.caiso.com/Documents/OASIS-Frequently-Asked-Questions.pdf
+
+Assemble our variables...
 
 Let's setup the initial variables for the query.
 
@@ -26,6 +26,7 @@ library(XML)
 startdate<-'2023-01-15'
 enddate<-'2023-01-30'
 market_run_id<-'RTM'
+api_version<-2
 queryname<-'PRC_INTVL_LMP'
 nodes<-c('TH_NP15_GEN-APND','TH_SP15_GEN-APND')
 ```
@@ -42,7 +43,7 @@ concat_nodes(nodes)
 nodes<-concat_nodes(nodes)
 ```
 
-The CAISO API requires an ISOFormat for its date input. The function below takes a more common R format and converts it to the necessary ISO format. It should be noted that the minimum query length is one day. If querying a part of a day is necessary then this function could be altered to include a datetime "hour".
+The CAISO API requires an ISOFormat for its date input. The function below takes a more common R format and converts it to the necessary ISO format. It should be noted that the minimum query length is one day. If querying part days is necessary then this function could be altered to include a datetime "hour".
 
 ```{r}
 caisodatefmt<-function(x){URLencode(format(lubridate::ymd(as.character(x),tz="America/Los_Angeles"),"%Y%m%dT07:00-0000"),reserved = TRUE)}
@@ -51,103 +52,21 @@ isoenddate<-caisodatefmt(enddate)
 
 ```
 
-This API call below is where the rubber meets the road. This script is doing three key things.
+This code section will be used to save the zipped file name. This will be important because we will be creating a loop to drop multiple files into our temp folder for extraction.
 
-1.  Its querying the CAISO API and returning a response.
-
-2.  Its saving the returned zipped file to a temporary file.
-
-3.  Its unzipping the downloaded XML file and loading it to a dataframe.
-
-Its seems like a lot because it is...
-
-This query is looking for an XML file, which is CAISO's preferred format. There is an option for a zipped CSV file. Simply add `resultformat=6` to the params list.
-
-```{r}
-# Load the required libraries
-library(httr)
-library(XML)
-library(tidyverse)
-library(xml2)
-# Define your API key and endpoint
-
-endpoint <- 'http://oasis.caiso.com/oasisapi/SingleZip'
-
-# Define the parameters for the data you want to retrieve
-params <- list(
- # "resultformat"=6,
-  "queryname" = "PRC_LMP",
-  "version" = "12", # API version
-  "startdatetime" = isostartdate,  # Start date and time
-  "enddatetime" = isoenddate,    # End date and time
-  "market_run_id" = market_run_id,  # Day-Ahead Market
-  "node" = nodes
-)
-
-# Make the API request with your API key and parameters
-full_url<-URLdecode(modify_url(endpoint, query = params))
-response <- GET(full_url)
-
-# Check if the request was successful (status code 200)
-if (response$status_code == 200) {
-  
-  temp_dir<-tempdir()
-  content_disposition<-response$headers$`content-disposition`
-  filename <- sub("^.*filename=\"?([^;\"]+)\"?.*$", "\\1", content_disposition)
-  temp_zip_file <- paste0(temp_dir, "\\", filename)
-  #temp_zip_file <- tempfile(fileext = ".zip")
- 
-  zipped<-writeBin(content(response,as='raw'),temp_zip_file)
-  unzip(temp_zip_file,exdir=temp_dir)
-  extracted_files <- list.files(temp_dir)
-  #data_file<-file.path(temp_dir,extracted_files[1])
-  
-  data_file<-file.path(temp_dir,paste0(tools::file_path_sans_ext(filename),'.xml'))
-  xml_doc <- xmlParse(data_file)
-  root_element <- xmlRoot(xml_doc)
-  
-  # Get the namespace URI
-  namespace_uri <- xmlNamespace(root_element)
-  
-  # Define the namespace prefix and URI
-  namespace_prefix <- "ns"
-  namespace_uri <- namespace_uri[[1]]
-  
-  # Find all <REPORT_DATA> elements with the namespace
-  report_data_nodes <- getNodeSet(xml_doc, "//ns:REPORT_DATA", namespaces = c(ns = namespace_uri))
-  
-  # Convert the XML data to a data frame
-  df <- xmlToDataFrame(report_data_nodes)
-  #files_to_delete <- dir(path=temp_dir)
-  #file.remove(file.path(temp_dir, files_to_delete))
-  # Now you have the CAISO OASIS data in the oasis_data object, which you can further process.
-} else {
-  stop("API request was not successful.")
-}
-
-```
-
-This code section from the above script is used to save the zipped file name. This will be important because we will be creating a loop to drop multiple files into our temp folder for extraction.
-
-```{r}
-
+``` r
 str(response$headers$`content-disposition`)
 content_disposition<-response$headers$`content-disposition`
  filename <- sub("^.*filename=\"?([^;\"]+)\"?.*$", "\\1", content_disposition)
-filename
-
 ```
 
-Delete the temp folder then all calculations are complete.
+If you'd like you can delete the temp folder then all calculations are complete. This part has been removed in the final API because it can only be called once per R session.
 
-```{r}
- 
-  unlink(temp_dir, recursive = TRUE)
+``` r
+unlink(temp_dir, recursive = TRUE)
 ```
 
-Each query has a different maximum date length you can request. This depends on the granularity of the data being requested. Since we will probably need more than \~30days of data we will need to implement a loop into our query.
-
-The script below takes a date range and a desired length of days and creates a range between the start and end dates.
+The script below is a sample that takes a date range and a desired length of days and creates a range between the start and end dates.
 
 ```{r}
 
@@ -168,7 +87,26 @@ while (s <= e) {
 
 ```
 
-Cool. Like every project I've worked on at home this function is laying in random pieces, it's time to pull everything together below.
+The API call below is where the rubber meets the road. This script is doing three key things.
+
+1.  Its querying the CAISO API and returning a response.
+
+2.  Its saving the returned zipped XML file to a temporary file.
+
+3.  Its unzipping the downloaded XML file and loading it to a dataframe.
+
+If it seems like a lot, it's because it is...
+
+This query is looking for an XML file, which is CAISO's preferred format. There is an option for a zipped CSV file. Simply add `resultformat=6` to the params list.
+
+Each query has a different maximum date length you can request. This depends on the granularity of the data being requested. Since we will probably need more than \~30days of data we will need to implement a loop into our query.
+
+``` r
+startdate<-'2023-01-01' #Date string in format %Y-%m-%d
+enddate<-'2023-01-31' #Date string in format %Y-%m-%d
+query<-'DAM' # one of Day Ahead='DAM', 15Min Market='FMM', Real Time='RTM'
+day_chunk<-30 # Default is 30days, but can be adjusted
+```
 
 ```{r}
 
@@ -178,7 +116,7 @@ library(httr)
 library(XML)
 library(xml2)
 
-caiso_prices<-function(startdate,enddate,queryname,market_run_id,nodes,day_chunk,api_version){
+caiso_prices<-function(startdate,enddate,query,nodes,day_chunk=30){
 
   concat_nodes<-function(x){if(length(x)>1){
    output=paste(x,collapse=",") 
@@ -192,12 +130,31 @@ caiso_prices<-function(startdate,enddate,queryname,market_run_id,nodes,day_chunk
   
   df_output<-data.frame() #Dataframe to store all looped dataframes
   
+  # If statement to assign API specific variables
+  if(query=='DAM'){
+    queryname<-'PRC_LMP'
+    api_version<-12
+    market_run_id<-'DAM'
+  }else if(query=='RTM'){
+    queryname<-'PRC_INTVL_LMP'
+    api_version<-2
+    market_run_id<-'RTM'
+  }else if(query=='FMM'){
+    queryname<-'PRC_RTPD_LMP'
+    api_version<-3
+    market_run_id<-'RTPD'
+  }else{
+    api_version<-1
+    market_run_id<-'DAM'
+  }
+  
+  # Loop over desired date ranges
   while (startdate <= enddate) {
     e_tmp <- startdate + days(day_chunk)
     if (e_tmp > enddate) {
       e_tmp <- enddate
     }
-  
+  # Convert dates to CAISO preferred format
       caisodatefmt<-function(x){(format(lubridate::ymd(as.character(x),tz="America/Los_Angeles"),"%Y%m%dT07:00-0000"))}
       isostartdate<-caisodatefmt(startdate)
       isoenddate<-caisodatefmt(e_tmp)
@@ -207,21 +164,22 @@ caiso_prices<-function(startdate,enddate,queryname,market_run_id,nodes,day_chunk
       # Define the parameters for the data you want to retrieve
       params <- list(
        # "resultformat"=6,
-        "queryname" = queryname,
+        "queryname" = queryname, # Query Name
         "version" = api_version, # API version
         "startdatetime" = isostartdate,  # Start date and time
         "enddatetime" = isoenddate,    # End date and time
-        "market_run_id" = market_run_id,  # Day-Ahead Market
-        "node" = nodes
+        "market_run_id" = market_run_id,  # Desired Market
+        "node" = nodes # Concatenated list of nodes
       )
       
-      # Make the API request with your API key and parameters
-      full_url<-URLdecode(modify_url(endpoint, query = params))
+      # Make the API request with parameters
+      full_url<-URLdecode(modify_url(endpoint, query = params)) # This is here to make sure the ":" render correctly
       response <- GET(full_url)
+      
       
       # Check if the request was successful (status code 200)
       if (response$status_code == 200) {
-        
+        #Create and store zipped file
         temp_dir<-tempdir()
         content_disposition<-response$headers$`content-disposition`
         filename <- sub("^.*filename=\"?([^;\"]+)\"?.*$", "\\1", content_disposition)
@@ -231,7 +189,8 @@ caiso_prices<-function(startdate,enddate,queryname,market_run_id,nodes,day_chunk
         unzip(temp_zip_file,exdir=temp_dir)
         extracted_files <- list.files(temp_dir)
         
-        data_file<-file.path(temp_dir,paste0(tools::file_path_sans_ext(filename),'.xml'))
+        data_file<-file.path(temp_dir,paste0(tools::file_path_sans_ext(filename),'.xml')) # Specific file pulled. Temp folder may have many.
+        # Parse XML
         xml_doc <- xmlParse(data_file)
         root_element <- xmlRoot(xml_doc)
         
@@ -253,13 +212,18 @@ caiso_prices<-function(startdate,enddate,queryname,market_run_id,nodes,day_chunk
       } else {
         stop("API request was not successful.")
       }
-  
-    s <- e_tmp + days(1)
-    print(s)
+    print(paste('Range start:',startdate,' end:',e_tmp))
+    startdate <- e_tmp + days(1) # Increment loop by 1 day
     Sys.sleep(5) #Sleep so you dont ping the server to death
     } #end of while loop
-  unlink(temp_dir, recursive = TRUE)
-  return(df_output)
+  #unlink(temp_dir, recursive = TRUE) # Currently not used
+  
+  #Convert the GMT or UTC times to the local timezone. 
+  df_output<-df_output%>%
+    mutate(
+      START_DATETIME=with_tz(as.POSIXct(INTERVAL_START_GMT, "%Y-%m-%dT%H:%M:%S", tz="UTC"),tzone="America/Los_Angeles"),
+           END_DATETIME=with_tz(as.POSIXct(INTERVAL_END_GMT, "%Y-%m-%dT%H:%M:%S", tz="UTC"),tzone="America/Los_Angeles"),.after=INTERVAL_END_GMT)
+  return(df_output) # Final output to return
 }#end of function
 ```
 
@@ -267,12 +231,12 @@ Take our new function for a spin...
 
 ```{r}
 startdate<-'2023-01-15'
-enddate<-'2023-01-30'
-market_run_id<-'DAM' #DAM,RTM
-queryname<-'PRC_LMP' #PRC_LMP, PRC_INTVL_LMP
+enddate<-'2023-01-16'
+query<-'RTM' 
 nodes<-c('TH_NP15_GEN-APND','TH_SP15_GEN-APND')
-day_chunk<-30
-api_version<-12 #Version 12 for DAM and Version 2 for RTM
 
-result<-caiso_prices(startdate = startdate,enddate=enddate,queryname = queryname,market_run_id = market_run_id,nodes = nodes,day_chunk = day_chunk,api_version=api_version)
+result<-caiso_prices(startdate = startdate,enddate=enddate,query = query,nodes = nodes)
+
+result%>%head(10)
+
 ```

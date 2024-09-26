@@ -17,6 +17,7 @@ website:
         href: blog.qmd
       - text: Map
         href: https://ryanmcmanus916.github.io/leaflet-maps-with-google-sheets/
+      - text: test
     right:
       - icon: github
         href: https://github.com/

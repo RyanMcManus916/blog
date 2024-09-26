@@ -15,6 +15,8 @@ website:
         href: resume.qmd
       - text: Blog
         href: blog.qmd
+      - text: WEI Map
+        href: https://ryanmcmanus916.github.io/leaflet-maps-with-google-sheets/
     right:
       - icon: github
         href: https://github.com/

@@ -9,8 +9,8 @@ website:
     left: 
       - text: Home
         href: index.qmd
-      # - text: Projects
-      #   href: projects.qmd
+      - text: Projects
+        href: projects.qmd
       - text: Resume
         href: resume.qmd
       - text: Blog

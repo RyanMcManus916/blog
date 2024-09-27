@@ -6,7 +6,7 @@ website:
   title: "Ryan McManus"
   favicon: "images/profile.png"
   navbar:
-    left: 
+    left:
       - text: Home
         href: index.qmd
       - text: Projects
@@ -15,9 +15,8 @@ website:
         href: resume.qmd
       - text: Blog
         href: blog.qmd
-      - text: Map
+      - text: WEI Map
         href: https://ryanmcmanus916.github.io/leaflet-maps-with-google-sheets/
-
     right:
       - icon: github
         href: https://github.com/

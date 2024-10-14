@@ -1,0 +1,138 @@
+---
+title: "Create Calendar in R"
+author: "Ryan McManus"
+date: "2023-10-21"
+categories: [R, function, code]
+image: "cover.png"
+---
+
+One of the most useful things you can create is a function to generate a calendar.
+
+Necessary packages
+
+```{r}
+#install.packages('timeDate')
+library(conflicted)
+library(timeDate)
+library(tidyverse)
+library(DT)
+conflicted::conflict_prefer_all('tidyverse','stats')
+
+
+```
+
+In the electric industry it's important to be able to summarize data by specific timing blocks. Below is a list of North American Electric Reliability Corporation (NERC) holidays.
+
+Select the timezone you wish to report in.
+
+```{r}
+startdate<-'2023-01-01'
+enddate<-'2024-02-01'
+#tz_select<-'America/Los_Angeles'
+tz_select<-'UTC'
+
+
+nerc_holidays<-as.Date(timeDate::holidayNERC(lubridate::year(lubridate::ymd(startdate)):lubridate::year(lubridate::ymd(enddate)),FinCenter=tz_select))%>%lubridate::force_tz()
+
+```
+
+Create the hourly calendar...
+
+You can get as creative with the timing periods as you need. Below is the general structure. Please notice the day-of-week (dow) has been changed so the week flows Monday to Sunday or 1 to 7 and hours are represented as hour-ending.
+
+```{r}
+
+df<-data.frame(start=lubridate::ymd_h(paste0(startdate,"_0"),tz=tz_select),end=lubridate::ymd_h(paste0(enddate,"_0")))%>%
+  dplyr::transmute(datetime=list(seq(min(start),max(end),by="hour")))%>%
+  tidyr::unnest(datetime)%>%
+  dplyr::mutate(datetime=lubridate::force_tz(datetime,tz=tz_select))%>%
+  dplyr::mutate(
+    date=lubridate::force_tz(lubridate::as_date(datetime),tz=tz_select),
+    year=lubridate::year(datetime),
+    month=lubridate::month(datetime),
+    day=lubridate::day(datetime),
+    hour=lubridate::hour(datetime)+1,
+    dow=lubridate::wday(datetime,week_start = getOption("lubridate.week.start",1)),
+    nerc_holiday=ifelse(date %in% nerc_holidays,1,0),
+    peak_day=ifelse(dplyr::between(dow,1,6) & nerc_holiday==0,1,0),
+    hlh=ifelse(dplyr::between(dow,1,6) & dplyr::between(hour,7,22) & nerc_holiday==0,1,0),
+    llh=1-hlh,
+    super=ifelse(dplyr::between(dow,1,5) & dplyr::between(hour,13,20) & nerc_holiday==0,1,0),
+    hlh_he13T22=ifelse(dplyr::between(dow,1,6) & dplyr::between(hour,13,22) & nerc_holiday==0,1,0),
+    llh_sun_holiday=ifelse(dow==7 | nerc_holiday==1,1,0)
+  )
+                  
+```
+
+Let's take a peak at the results.
+
+```{r}
+df%>%head(50)%>%DT::datatable()
+
+```
+
+We need to double check our results. I refer to [Energy GPS Power Calendar](https://www.energygps.com/HomeTools/PowerCalendar "Power Calendar"). Below is a quick screenshot for reference.
+
+![](energy_gps_screenshot.png){fig-align="center"}
+
+We need to roll-up our results for comparison.
+
+```{r}
+
+df%>%
+  dplyr::summarise(dplyr::across(nerc_holiday:llh_sun_holiday,~sum(.)),month_date=max(lubridate::floor_date(date,'month')),.by = c(year,month))%>%
+  mutate(days_in_month=lubridate::days_in_month(month_date),flat=days_in_month*24,peak_day=peak_day/24,nerc_holiday=nerc_holiday/24,.after = peak_day)%>%
+  select(month_date,year,month,flat,hlh,llh,llh_sun_holiday,peak_day,days_in_month,nerc_holiday)%>%
+  DT::datatable()
+
+```
+
+Looks good to me!
+
+Boom. Now you have a NERC calendar you can use in R or drop it to a flat file or a SQL table for different uses. Before we end this, let's do one more step to make this calendar infinitely more useful. Let's create a calendar function!
+
+```{r}
+
+calendar<-function(startdate,enddate,tz_select='UTC',granularity='hour'){
+
+  nerc_holidays<-as.Date(timeDate::holidayNERC(lubridate::year(lubridate::ymd(startdate)):lubridate::year(lubridate::ymd(enddate)),FinCenter=tz_select))%>%lubridate::force_tz()
+  
+  df<-data.frame(start=lubridate::ymd_h(paste0(startdate,"_0"),tz=tz_select),end=lubridate::ymd_h(paste0(enddate,"_0")))%>%
+  dplyr::transmute(datetime=list(seq(min(start),max(end),by="hour")))%>%
+  tidyr::unnest(datetime)%>%
+  dplyr::mutate(datetime=lubridate::force_tz(datetime,tz=tz_select))%>%
+  dplyr::mutate(
+    date=lubridate::force_tz(lubridate::as_date(datetime),tz=tz_select),
+    year=lubridate::year(datetime),
+    month=lubridate::month(datetime),
+    day=lubridate::day(datetime),
+    hour=lubridate::hour(datetime)+1,
+    dow=lubridate::wday(datetime,week_start = getOption("lubridate.week.start",1)),
+    nerc_holiday=ifelse(date %in% nerc_holidays,1,0),
+    peak_day=ifelse(dplyr::between(dow,1,6) & nerc_holiday==0,1,0),
+    hlh=ifelse(dplyr::between(dow,1,6) & dplyr::between(hour,7,22) & nerc_holiday==0,1,0),
+    llh=1-hlh,
+    super=ifelse(dplyr::between(dow,1,5) & dplyr::between(hour,13,20) & nerc_holiday==0,1,0),
+    hlh_he13T22=ifelse(dplyr::between(dow,1,6) & dplyr::between(hour,13,22) & nerc_holiday==0,1,0),
+    llh_sun_holiday=ifelse(dow==7 | nerc_holiday==1,1,0)
+  )
+  
+  if(granularity=='month'){
+    df<-df%>%dplyr::summarise(dplyr::across(nerc_holiday:llh_sun_holiday,~sum(.)),month_date=max(lubridate::floor_date(date,'month')),.by = c(year,month))%>%
+      mutate(days_in_month=lubridate::days_in_month(month_date),flat=days_in_month*24,peak_day=peak_day/24,nerc_holiday=nerc_holiday/24,.after = peak_day)%>%
+      select(month_date,everything())
+  }
+  
+  return(df)
+  
+}
+
+```
+
+Take the new function for a spin...
+
+```{r}
+
+calendar('2022-01-01','2023-01-01',granularity = 'month')%>%DT::datatable()
+
+```

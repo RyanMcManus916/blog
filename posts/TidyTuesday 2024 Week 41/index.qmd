@@ -2,6 +2,7 @@
 title: "TidyTuesday 2024 Week 41"
 author: "Ryan McManus"
 date: "2024-10-13"
+slug: "tidytuesday-2024-week-41"
 categories: [R, function, code,Shiny]
 image: "cover.png"
 ---
@@ -15,6 +16,10 @@ Try it out here: [NPS TidyTuesday Shiny App](https://ryanmcmanus916.shinyapps.io
 ## Source Data
 
 ```{r}
+#| warning: false
+#| error: false
+
+
 library(WikipediR)
 library(rvest)
 library(tidyverse)
@@ -66,6 +71,9 @@ wikipedia_search<-function(search_word){
 ## Shiny App
 
 ```{r}
+#| warning: false
+#| error: false
+
 
 library(shiny)
 library(bslib)

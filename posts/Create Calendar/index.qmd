@@ -2,6 +2,7 @@
 title: "Create Calendar in R"
 author: "Ryan McManus"
 date: "2023-10-21"
+slug: "create-calendar-in-r"
 categories: [R, function, code]
 image: "cover.png"
 ---

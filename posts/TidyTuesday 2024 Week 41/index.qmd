@@ -63,7 +63,7 @@ wikipedia_search<-function(search_word){
         paragraphs_text<-gsub('\n','',paragraphs_text)
         paragraph_contents<-paste(paragraphs_text,collapse = '\n\n')
     }
-    return(list('text'=paragraph_contents,'image'=img))
+    return(list('text'=paragraph_contents,'image'=img, 'image_url' =img_url))
     
 }
 ```
@@ -109,7 +109,8 @@ ui <- fluidPage(
            uiOutput("intro_text"),
            card(
              card_header("Image of Species"),
-             plotOutput("main_plot")
+             #plotOutput("main_plot")
+             uiOutput("image_url")
              ),
            card(
              card_header("Wikipedia Description"),
@@ -139,6 +140,10 @@ server <- function(input, output,session) {
   
   wikidata<-eventReactive(input$button,{
     wikipedia_search(input$a_select)
+  })
+  
+  output$image_url<-renderUI({
+    img(wikidata()$image_url,width='100%')
   })
   
   output$main_plot<-renderPlot({

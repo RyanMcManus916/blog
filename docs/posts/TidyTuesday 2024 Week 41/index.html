@@ -233,7 +233,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span>        <span class="va">paragraphs_text</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html">gsub</a></span><span class="op">(</span><span class="st">'\n'</span>,<span class="st">''</span>,<span class="va">paragraphs_text</span><span class="op">)</span></span>
 <span>        <span class="va">paragraph_contents</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span><span class="op">(</span><span class="va">paragraphs_text</span>,collapse <span class="op">=</span> <span class="st">'\n\n'</span><span class="op">)</span></span>
 <span>    <span class="op">}</span></span>
-<span>    <span class="kw"><a href="https://rdrr.io/r/base/function.html">return</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="st">'text'</span><span class="op">=</span><span class="va">paragraph_contents</span>,<span class="st">'image'</span><span class="op">=</span><span class="va">img</span><span class="op">)</span><span class="op">)</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/function.html">return</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="st">'text'</span><span class="op">=</span><span class="va">paragraph_contents</span>,<span class="st">'image'</span><span class="op">=</span><span class="va">img</span>, <span class="st">'image_url'</span> <span class="op">=</span><span class="va">img_url</span><span class="op">)</span><span class="op">)</span></span>
 <span>    </span>
 <span><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
@@ -274,7 +274,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span>           <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/htmlOutput.html">uiOutput</a></span><span class="op">(</span><span class="st">"intro_text"</span><span class="op">)</span>,</span>
 <span>           <span class="fu"><a href="https://rstudio.github.io/bslib/reference/card.html">card</a></span><span class="op">(</span></span>
 <span>             <span class="fu"><a href="https://rstudio.github.io/bslib/reference/card_body.html">card_header</a></span><span class="op">(</span><span class="st">"Image of Species"</span><span class="op">)</span>,</span>
-<span>             <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/plotOutput.html">plotOutput</a></span><span class="op">(</span><span class="st">"main_plot"</span><span class="op">)</span></span>
+<span>             <span class="co">#plotOutput("main_plot")</span></span>
+<span>             <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/htmlOutput.html">uiOutput</a></span><span class="op">(</span><span class="st">"image_url"</span><span class="op">)</span></span>
 <span>             <span class="op">)</span>,</span>
 <span>           <span class="fu"><a href="https://rstudio.github.io/bslib/reference/card.html">card</a></span><span class="op">(</span></span>
 <span>             <span class="fu"><a href="https://rstudio.github.io/bslib/reference/card_body.html">card_header</a></span><span class="op">(</span><span class="st">"Wikipedia Description"</span><span class="op">)</span>,</span>
@@ -304,6 +305,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span>  </span>
 <span>  <span class="va">wikidata</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/observeEvent.html">eventReactive</a></span><span class="op">(</span><span class="va">input</span><span class="op">$</span><span class="va">button</span>,<span class="op">{</span></span>
 <span>    <span class="fu">wikipedia_search</span><span class="op">(</span><span class="va">input</span><span class="op">$</span><span class="va">a_select</span><span class="op">)</span></span>
+<span>  <span class="op">}</span><span class="op">)</span></span>
+<span>  </span>
+<span>  <span class="va">output</span><span class="op">$</span><span class="va">image_url</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderUI.html">renderUI</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rstudio.github.io/htmltools/reference/builder.html">img</a></span><span class="op">(</span><span class="fu">wikidata</span><span class="op">(</span><span class="op">)</span><span class="op">$</span><span class="va">image_url</span>,width<span class="op">=</span><span class="st">'100%'</span><span class="op">)</span></span>
 <span>  <span class="op">}</span><span class="op">)</span></span>
 <span>  </span>
 <span>  <span class="va">output</span><span class="op">$</span><span class="va">main_plot</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderPlot.html">renderPlot</a></span><span class="op">(</span><span class="op">{</span></span>

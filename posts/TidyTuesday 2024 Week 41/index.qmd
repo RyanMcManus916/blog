@@ -3,6 +3,7 @@ title: "TidyTuesday 2024 Week 41"
 author: "Ryan McManus"
 date: "2024-10-13"
 categories: [R, function, code,Shiny]
+image: "cover.png"
 ---
 
 ## Introduction
